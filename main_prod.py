@@ -180,12 +180,15 @@ def consulta_cliente(index):
     st.write(produtos)
     lista_contatos = []
 
-    for id in ids_hubspot:
-        contatos = captura_contatos(id, headers_hubspot)
-        lista_contatos.extend(contatos)
+    if not id == '[nan]':
+        for id in ids_hubspot:
+            contatos = captura_contatos(id, headers_hubspot)
+            lista_contatos.extend(contatos)
 
-    contatos = [contato['properties'] for contato in lista_contatos]
-    contatos = pd.DataFrame(contatos)
+        contatos = [contato['properties'] for contato in lista_contatos]
+        contatos = pd.DataFrame(contatos)
+    else:
+        contatos = 'Empresa não encontrada no Hubspot'
     st.subheader('Pessoas')
     with st.expander('Ver pessoas'):
         st.write(contatos)
