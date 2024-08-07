@@ -100,7 +100,10 @@ def captura_contatos(id_empresa, headers_hubspot):
     }
 
     response = requests.post(url, headers=headers_hubspot, data=json.dumps(data)).json()
-    return response['results']
+    contatos = response['results']
+    contatos = [contato['properties'] for contato in contatos]
+    contatos = pd.DataFrame(contatos)
+    return contatos
 
 def captura_cobrancas(id_sacado, headers_assinas):
     url = f"https://api.superlogica.net/v2/financeiro/cobranca?doClienteComId={id_sacado}&pagina=1&itensPorPagina=50"
@@ -136,11 +139,20 @@ supabase = init_connection()
 
 @st.cache_resource
 def run_query():
-    return supabase.table("clientes-sl").select("*").execute()
+    data = []
+    start = 0
+    limit = 1000
+    while True:
+        response = supabase.table("clientes-sl").select("*").range(start, start + limit - 1).execute()
+        if not response.data:
+            break
+        data.extend(response.data)
+        start += limit
+    return data
 
 rows = run_query()
-if rows.data:
-    banco = pd.DataFrame(rows.data)
+if rows:
+    banco = pd.DataFrame(rows)
 
 def buscar_no_dataframe(df, criterio):
     resultado = df[
