@@ -219,20 +219,9 @@ if 'resultado' in st.session_state:
     st.header('Resultado da busca 🔎', divider=True)
 
     for index, row in resultado.iterrows():
-         # Avaliando a string como uma lista
-         licencas = row['st_identificador_plc']
-         planos = row['st_nome_pla']
-         def trata_listas_para_string(lista_itens):
-             lista = ast.literal_eval(lista_itens)
-             lista = ', '.join(lista)
-             return lista
-
-         licencas = trata_listas_para_string(licencas)
-         planos = trata_listas_para_string(licencas)
-
          st.subheader(f"Razão social: {row['st_nome_sac']}")
-         st.markdown(f"Licença(s): {licencas}")
-         st.write(f"Plano(s): {planos}")
+         st.markdown(f"Licença(s): {row['st_identificador_plc']}")
+         st.write(f"Plano(s): {row['st_nome_pla']}")
 
          if st.button("ver mais", key=f"detalhes_{index}"):
             st.session_state.cliente_index = index
