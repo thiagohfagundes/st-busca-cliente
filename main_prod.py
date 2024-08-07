@@ -6,11 +6,14 @@ from supabase import create_client, Client
 st.set_page_config(layout="wide")
 
 def trata_listas(string):
-    # Converter string para lista
-    lista = ast.literal_eval(string)
-    # Remover duplicações
-    lista_unica = list(set(lista))
-    return lista_unica
+    if string == '[nan]':
+        return []
+    else:
+        # Converter string para lista
+        lista = ast.literal_eval(string)
+        # Remover duplicações
+        lista_unica = list(set(lista))
+        return lista_unica
 
 def trata_cobrancas(lista):
     def statusrecb(status):
@@ -180,15 +183,12 @@ def consulta_cliente(index):
     st.write(produtos)
     lista_contatos = []
 
-    if not id == '[nan]':
-        for id in ids_hubspot:
-            contatos = captura_contatos(id, headers_hubspot)
-            lista_contatos.extend(contatos)
+    for id in ids_hubspot:
+        contatos = captura_contatos(id, headers_hubspot)
+        lista_contatos.extend(contatos)
 
-        contatos = [contato['properties'] for contato in lista_contatos]
-        contatos = pd.DataFrame(contatos)
-    else:
-        contatos = 'Empresa não encontrada no Hubspot'
+    contatos = [contato['properties'] for contato in lista_contatos]
+    contatos = pd.DataFrame(contatos)
     st.subheader('Pessoas')
     with st.expander('Ver pessoas'):
         st.write(contatos)
