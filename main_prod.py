@@ -100,10 +100,7 @@ def captura_contatos(id_empresa, headers_hubspot):
     }
 
     response = requests.post(url, headers=headers_hubspot, data=json.dumps(data)).json()
-    contatos = response['results']
-    contatos = [contato['properties'] for contato in contatos]
-    contatos = pd.DataFrame(contatos)
-    return contatos
+    return response['results']
 
 def captura_cobrancas(id_sacado, headers_assinas):
     url = f"https://api.superlogica.net/v2/financeiro/cobranca?doClienteComId={id_sacado}&pagina=1&itensPorPagina=50"
@@ -187,7 +184,8 @@ def consulta_cliente(index):
         contatos = captura_contatos(id, headers_hubspot)
         lista_contatos.extend(contatos)
 
-    contatos = pd.DataFrame(lista_contatos)
+    contatos = [contato['properties'] for contato in lista_contatos]
+    contatos = pd.DataFrame(contatos)
     st.subheader('Pessoas')
     with st.expander('Ver pessoas'):
         st.write(contatos)
