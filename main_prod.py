@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-import requests
+import requests, ast
 from supabase import create_client, Client
 
 st.set_page_config(layout="wide")
@@ -108,7 +108,7 @@ def captura_cobrancas(id_sacado, headers_assinas):
 
     return cobrancas
 
-access_token_hubspot = st.secrets["access_token"]
+access_token_hubspot = st.secrets["access_token_hubspot"]
 app_token_assinas = st.secrets["app_token_assinas"]
 access_token_assinas = st.secrets["access_token_assinas"]
 url_supabase = st.secrets["url_supabase"]
