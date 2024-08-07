@@ -165,7 +165,7 @@ def buscar_no_dataframe(df, criterio):
 @st.dialog("Detalhes do cliente", width="large")
 def consulta_cliente(index):
     cliente = banco.iloc[index]
-    st.subheader("Dados gerais")
+    st.subheader("Dados gerais 🎲", divider=True)
     st.write(cliente)
     ids_assinaturas = trata_listas(cliente['id_sacado_sac'])
     ids_hubspot = trata_listas(cliente['hs_object_id'])
@@ -179,7 +179,7 @@ def consulta_cliente(index):
         lista_cobrancas.extend(cobrancas)
 
     produtos = pd.DataFrame(lista_produtos)
-    st.subheader('Produtos SaaS')
+    st.subheader('Produtos SaaS 🖥️', divider=True)
     st.write(produtos)
     lista_contatos = []
 
@@ -189,12 +189,12 @@ def consulta_cliente(index):
 
     contatos = [contato['properties'] for contato in lista_contatos]
     contatos = pd.DataFrame(contatos)
-    st.subheader('Pessoas')
+    st.subheader('Pessoas 👥', divider=True)
     with st.expander('Ver pessoas'):
         st.write(contatos)
 
     cobrancas = trata_cobrancas(lista_cobrancas)
-    st.subheader('Cobranças')
+    st.subheader('Cobranças 💰', divider=True)
     with st.expander('Ver últimas cobranças'):
         st.write(cobrancas)
 
@@ -219,9 +219,20 @@ if 'resultado' in st.session_state:
     st.header('Resultado da busca 🔎', divider=True)
 
     for index, row in resultado.iterrows():
+         # Avaliando a string como uma lista
+         licencas = row['st_identificador_plc']
+         planos = row['st_nome_pla']
+         def trata_listas_para_string(lista_itens):
+             lista = ast.literal_eval(lista_itens)
+             lista = ', '.join(lista)
+             return lista
+
+         licencas = trata_listas_para_string(licencas)
+         planos = trata_listas_para_string(licencas)
+
          st.subheader(f"Razão social: {row['st_nome_sac']}")
-         st.markdown(f"Licença(s): {row['st_identificador_plc']}")
-         st.write(f"Plano(s): {row['st_nome_pla']}")
+         st.markdown(f"Licença(s): {licencas}")
+         st.write(f"Plano(s): {planos}")
 
          if st.button("ver mais", key=f"detalhes_{index}"):
             st.session_state.cliente_index = index
