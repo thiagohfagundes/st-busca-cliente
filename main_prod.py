@@ -1,10 +1,112 @@
 import streamlit as st
 import pandas as pd
-from funcoes import captura_produtos, captura_contatos, captura_cobrancas
-from funcoes_tratamento import trata_listas, trata_cobrancas
+import requests
 from supabase import create_client, Client
 
 st.set_page_config(layout="wide")
+
+def trata_listas(string):
+    # Converter string para lista
+    lista = ast.literal_eval(string)
+    # Remover duplicações
+    lista_unica = list(set(lista))
+    return lista_unica
+
+def trata_cobrancas(lista):
+    def statusrecb(status):
+        if status == '0':
+            return 'Aberto'
+        elif status == '1':
+            return 'Pago'
+
+    cobrancas = pd.DataFrame(lista)
+    cobrancas = cobrancas[
+        ['st_email_sac', 'dt_vencimento_recb', 'dt_recebimento_recb', 'nome_forma_pagamento_cliente',
+         'fl_status_recb', 'vl_total_recb', 'vl_emitido_recb', 'link_2via', 'nota']]
+    colunas_datas = ['dt_vencimento_recb', 'dt_recebimento_recb']
+    colunas_valor = ['vl_total_recb', 'vl_emitido_recb']
+    cobrancas[colunas_datas] = cobrancas[colunas_datas].apply(pd.to_datetime, errors='coerce')
+    cobrancas[colunas_valor] = cobrancas[colunas_valor].apply(pd.to_numeric, errors='coerce')
+    cobrancas['fl_status_recb'] = cobrancas['fl_status_recb'].apply(statusrecb)
+    cobrancas = cobrancas.sort_values(by='dt_vencimento_recb', ascending=False).head(10)
+
+    return cobrancas
+
+def captura_produtos(id_sacado, headers):
+    url = f"https://api.superlogica.net/v2/financeiro/assinaturas?ID_SACADO_SAC={id_sacado}&pagina=1&itensPorPagina=50&comContrato=&avulsas="
+    response = requests.get(url, headers=headers).json()
+    assinaturas = response[0]['data']
+    produtos = []
+
+    for assinatura in assinaturas:
+        assin = {}
+
+        assin['licença'] = assinatura['st_identificador_plc']
+        assin['nome do plano'] = assinatura['st_nome_pla']
+        assin['categoria do plano'] = assinatura['st_nome_gpl']
+        assin['data de inicio'] = assinatura['dt_contrato_plc']
+        if assinatura['dt_cancelamento_plc'] == '':
+            assin['status'] = 'ativo'
+        else:
+            assin['status'] = 'inativo'
+            assin['cancelamento'] = assinatura['dt_cancelamento_plc']
+        if assinatura['fl_periodicidade_pla'] == '1':
+            assin['periodicidade'] = 'anual'
+        else:
+            assin['periodicidade'] = 'mensal'
+
+        for produto in assinatura['mensalidade']:
+            descricao = produto.get('st_descricao_prd', '').lower()
+            valor_mens = produto.get('st_valor_mens')
+
+            if 'taxa de licenciamento' in descricao:
+                assin['produto'] = "ERP"
+                assin['mensalidade'] = valor_mens
+            elif 'owli' in descricao:
+                assin['produto'] = "Owli"
+                assin['mensalidade'] = valor_mens
+            elif 'crm cobranças' in descricao:
+                assin['produto'] = "CRM Cobranças"
+                assin['mensalidade'] = valor_mens
+            elif 'descontos' in descricao:
+                assin['desconto'] = valor_mens
+
+        produtos.append(assin)
+    return produtos
+
+def captura_contatos(id_empresa, headers_hubspot):
+    url = f"https://api.hubapi.com/crm/v4/objects/companies/{id_empresa}/associations/contact"
+    response = requests.get(url, headers=headers_hubspot).json()
+    contatos = response['results']
+    lista_contatos = []
+    for contato in contatos:
+        lista_contatos.append(f"{contato['toObjectId']}")
+
+    url = "https://api.hubapi.com/crm/v3/objects/contacts/search"
+
+    data = {
+        "limit": 100,
+        "after": None,
+        "filterGroups": [
+            {
+                "filters": [
+                    {
+                        "propertyName": "hs_object_id",
+                        "operator": "IN",
+                        "values": lista_contatos
+                    }]
+            }
+        ]
+    }
+
+    response = requests.post(url, headers=headers_hubspot, data=json.dumps(data)).json()
+    return response['results']
+
+def captura_cobrancas(id_sacado, headers_assinas):
+    url = f"https://api.superlogica.net/v2/financeiro/cobranca?doClienteComId={id_sacado}&pagina=1&itensPorPagina=50"
+    cobrancas = requests.get(url, headers=headers_assinas).json()
+
+    return cobrancas
 
 access_token_hubspot = st.secrets["access_token"]
 app_token_assinas = st.secrets["app_token_assinas"]
