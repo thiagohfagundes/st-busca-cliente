@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-import requests, ast
+import requests, ast, json
 from supabase import create_client, Client
 
 st.set_page_config(layout="wide")
